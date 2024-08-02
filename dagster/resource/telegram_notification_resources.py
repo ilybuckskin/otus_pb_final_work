@@ -1,6 +1,7 @@
-from dagster import resource
 from utils.base_utils import get_environ
 from utils.telegram_notification_utils import TelegramNotification
+
+from dagster import resource
 
 
 @resource
@@ -10,6 +11,8 @@ def telegram_notification():
     user = get_environ("DB_USER_BOT")
     database = get_environ("DB_NAME_BOT")
     passwd = get_environ("DB_PASS_BOT")
-    connection_str = f'host={host} port={port} dbname={database} user={user} password={passwd}'
+    connection_str = (
+        f"host={host} port={port} dbname={database} user={user} password={passwd}"
+    )
     telegram_bot_api_token = get_environ("TELEGRAM_BOT_API_TOKEN")
     return TelegramNotification(telegram_bot_api_token, connection_str)

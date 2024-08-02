@@ -6,9 +6,9 @@ import sys
 import psycopg
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import exceptions, executor
-from dagster import get_dagster_logger
-
 from utils.base_utils import render_query_with_jinja
+
+from dagster import get_dagster_logger
 
 my_logger = get_dagster_logger()
 
@@ -24,28 +24,36 @@ class TelegramNotification:
         self._api_token = api_token
         self._conn = connection_str
         logging.basicConfig(level=logging.INFO)
-        self._log = logging.getLogger('dagster')
+        self._log = logging.getLogger("dagster")
 
         self._bot = Bot(token=self._api_token)
         self._dp = Dispatcher(self._bot)
 
     def get_bot_user(self, notification_name: str):
-        rendered_query = render_query_with_jinja(get_user_by_type, {'notification_name': notification_name})
+        rendered_query = render_query_with_jinja(
+            get_user_by_type, {"notification_name": notification_name}
+        )
 
         with psycopg.connect(self._conn) as con:
             with con.cursor() as cur:
                 cur.execute(rendered_query)
                 return [r[0] for r in cur.fetchall()]
 
-    async def _send_message(self, user, text: str, disable_notification: bool = False) -> bool:
+    async def _send_message(
+        self, user, text: str, disable_notification: bool = False
+    ) -> bool:
         try:
-            await self._bot.send_message(user, text, disable_notification=disable_notification)
+            await self._bot.send_message(
+                user, text, disable_notification=disable_notification
+            )
         except exceptions.BotBlocked:
             self._log.error(f"Target [ID:{user}]: blocked by user")
         except exceptions.ChatNotFound:
             self._log.error(f"Target [ID:{user}]: invalid user ID")
         except exceptions.RetryAfter as e:
-            self._log.error(f"Target [ID:{user}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
+            self._log.error(
+                f"Target [ID:{user}]: Flood limit is exceeded. Sleep {e.timeout} seconds."
+            )
             await asyncio.sleep(e.timeout)
             return await self._send_message(user, text)  # Recursive call
         except exceptions.UserDeactivated:
@@ -64,11 +72,11 @@ class TelegramNotification:
                 executor.start(self._dp, self._send_message(user, text))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     telegram_bot_api_token = "7288723112:AAE2tIlrJs1LshdS5a1tuc4fGtwhXQzoYps"
-    connection_str = 'host=127.0.0.1 dbname=postgres user=postgres password=postgres'
-    t = 'test error message'
+    connection_str = "host=127.0.0.1 dbname=postgres user=postgres password=postgres"
+    t = "test error message"
     tg = TelegramNotification(telegram_bot_api_token, connection_str)
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    tg.send_message(str(t), 'error')
+    tg.send_message(str(t), "error")

@@ -1,14 +1,16 @@
 import time
+from resource.telegram_notification_resources import telegram_notification
 
 from dagster import FilesystemIOManager, job, op, repository, schedule
-from resource.telegram_notification_resources import telegram_notification
 
 
 @op(required_resource_keys={"telegram_notification"})
 def hello(context):
-    context.resources.telegram_notification.send_message('test info message', 'info')
-    context.resources.telegram_notification.send_message('test warning message', 'warning')
-    context.resources.telegram_notification.send_message('test error message', 'error')
+    context.resources.telegram_notification.send_message("test info message", "info")
+    context.resources.telegram_notification.send_message(
+        "test warning message", "warning"
+    )
+    context.resources.telegram_notification.send_message("test error message", "error")
     time.sleep(30)
     return 1
 
@@ -21,9 +23,10 @@ def goodbye(foo):
     return foo * 2
 
 
-@job(resource_defs={
-    "telegram_notification": telegram_notification,
-},
+@job(
+    resource_defs={
+        "telegram_notification": telegram_notification,
+    },
 )
 def my_job():
     goodbye(hello())

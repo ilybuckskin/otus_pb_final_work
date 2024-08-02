@@ -3,14 +3,11 @@ import os
 import sys
 
 from aiogram import Bot, Dispatcher
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-
 from config import get_connection_string_bot, get_environ
 from db.requests import test_connection
 from handlers import get_routers
 from middlewares import DbSessionMiddleware
-
-
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 
 async def main():

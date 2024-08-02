@@ -9,7 +9,7 @@ def get_environ(environ_name, default=None):
 
 
 def render_query_with_jinja(query, template_params):
-    jinja_env = Environment(extensions=['jinja2.ext.do'])
+    jinja_env = Environment(extensions=["jinja2.ext.do"])
     if not template_params:
         sqlquery = query
     else:
