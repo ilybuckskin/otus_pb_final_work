@@ -13,6 +13,5 @@ COPY ./bot ./
 
 RUN poetry install
 
-RUN alembic upgrade head
 
 CMD ["python", "bot.py"]

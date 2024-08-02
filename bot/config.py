@@ -8,11 +8,10 @@ def get_environ(environ_name, default=None):
 
 def get_connection_string_bot() -> str:
     host = get_environ("DB_HOST_BOT")
-    port = get_environ("DB_PORT_BOT")
     user = get_environ("DB_USER_BOT")
     database = get_environ("DB_NAME_BOT")
     passwd = get_environ("DB_PASS_BOT")
-    return f"postgresql+psycopg://{user}:{passwd}@{host}:{port}/{database}"
+    return f"postgresql+psycopg://{user}:{passwd}@{host}/{database}"
 
 
 def get_connection_string_dagster() -> str:

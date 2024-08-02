@@ -51,13 +51,11 @@ services:
     networks:
       - otus_network
 
-  # This service runs dagster-webserver, which loads your user code from the user code container.
-  # Since our instance uses the QueuedRunCoordinator, any runs submitted from the webserver will be put on
-  # a queue and later dequeued and launched by dagster-daemon.
   docker_example_webserver:
     build:
       context: .
       dockerfile: ./dagster/Dockerfile_dagster
+    restart: always
     entrypoint:
       - dagster-webserver
       - -h
@@ -90,8 +88,6 @@ services:
     networks:
       - otus_network
 
-  # This service runs the dagster-daemon process, which is responsible for taking runs
-  # off of the queue and launching them, as well as creating runs from schedules or sensors.
   docker_example_daemon:
     build:
       context: .
@@ -126,6 +122,7 @@ services:
       dockerfile: ./bot/Dockerfile
     container_name: telegram_bot
     restart: on-failure
+    command: sh -c "alembic upgrade head && python bot.py"
     environment:
       DAGSTER_POSTGRES_HOST: "postgresql"
       DAGSTER_POSTGRES_USER: "dagster"
@@ -139,7 +136,8 @@ services:
       DB_PASS_BOT: "postgres"
       TELEGRAM_BOT_API_TOKEN: "7288723112:AAE2tIlrJs1LshdS5a1tuc4fGtwhXQzoYps"
     depends_on:
-      - postgresql
+      postgresql:
+        condition: service_healthy
     networks:
       - otus_network
 
