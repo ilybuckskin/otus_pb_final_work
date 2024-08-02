@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "otus-pb-final-work"
+version = "0.1.0"
+description = "Выпускная работа по курсу OTUS Python Developer. Basic"
+authors = ["ilybuckskin <iljuha.bulanov@yandex.ru>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+aiogram = "^3.8.0"
+sqlalchemy = "^2.0.31"
+alembic = "^1.13.2"
+psycopg = {extras = ["binary"], version = "^3.2.1"}
+jinja2 = "^3.1.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

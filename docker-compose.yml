@@ -1,0 +1,149 @@
+version: "3.9"
+volumes:
+  dbt-data:
+
+x-otus-final-work-depends-on: &otus-final-work-depends-on
+  postgresql:
+    condition: service_healthy
+
+services:
+  postgresql:
+    container_name: postgresql
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    expose:
+      - 5432
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./docker-volume/db-data-postgres:/var/lib/postgresql/data
+#      - ./docker-volume/db-init-dump:/db-init-dump
+      - ./docker-volume/db-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: pg_isready -h localhost -p 5432 -U postgres
+      retries: 10
+      interval: 30s
+      timeout: 5s
+    networks:
+      - otus_network
+
+  docker_example_user_code:
+    build:
+      context: .
+      dockerfile: ./dagster/Dockerfile_user_code
+    container_name: docker_example_user_code
+    image: docker_example_user_code_image
+    restart: always
+    environment:
+      DAGSTER_POSTGRES_USER: "dagster"
+      DAGSTER_POSTGRES_PASSWORD: "dagster"
+      DAGSTER_POSTGRES_DB: "dagster"
+      DAGSTER_CURRENT_IMAGE: "docker_example_user_code_image"
+      DB_HOST_BOT: "postgresql"
+      DB_PORT_BOT: "5432"
+      DB_USER_BOT: "postgres"
+      DB_NAME_BOT: "postgres"
+      DB_PASS_BOT: "postgres"
+      TELEGRAM_BOT_API_TOKEN: "7288723112:AAE2tIlrJs1LshdS5a1tuc4fGtwhXQzoYps"
+    networks:
+      - otus_network
+
+  # This service runs dagster-webserver, which loads your user code from the user code container.
+  # Since our instance uses the QueuedRunCoordinator, any runs submitted from the webserver will be put on
+  # a queue and later dequeued and launched by dagster-daemon.
+  docker_example_webserver:
+    build:
+      context: .
+      dockerfile: ./dagster/Dockerfile_dagster
+    entrypoint:
+      - dagster-webserver
+      - -h
+      - "0.0.0.0"
+      - -p
+      - "3000"
+      - -w
+      - workspace.yaml
+    container_name: docker_example_webserver
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+    environment:
+      DAGSTER_POSTGRES_USER: "dagster"
+      DAGSTER_POSTGRES_PASSWORD: "dagster"
+      DAGSTER_POSTGRES_DB: "dagster"
+      DB_HOST_BOT: "postgresql"
+      DB_PORT_BOT: "5432"
+      DB_USER_BOT: "postgres"
+      DB_NAME_BOT: "postgres"
+      DB_PASS_BOT: "postgres"
+      TELEGRAM_BOT_API_TOKEN: "7288723112:AAE2tIlrJs1LshdS5a1tuc4fGtwhXQzoYps"
+    volumes: # Make docker client accessible so we can terminate containers from the webserver
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/io_manager_storage:/tmp/io_manager_storage
+    depends_on:
+      - postgresql
+      - docker_example_user_code
+    networks:
+      - otus_network
+
+  # This service runs the dagster-daemon process, which is responsible for taking runs
+  # off of the queue and launching them, as well as creating runs from schedules or sensors.
+  docker_example_daemon:
+    build:
+      context: .
+      dockerfile: ./dagster/Dockerfile_dagster
+    entrypoint:
+      - dagster-daemon
+      - run
+    container_name: docker_example_daemon
+    restart: on-failure
+    environment:
+      DAGSTER_POSTGRES_USER: "dagster"
+      DAGSTER_POSTGRES_PASSWORD: "dagster"
+      DAGSTER_POSTGRES_DB: "dagster"
+      DB_HOST_BOT: "postgresql"
+      DB_PORT_BOT: "5432"
+      DB_USER_BOT: "postgres"
+      DB_NAME_BOT: "postgres"
+      DB_PASS_BOT: "postgres"
+      TELEGRAM_BOT_API_TOKEN: "7288723112:AAE2tIlrJs1LshdS5a1tuc4fGtwhXQzoYps"
+    volumes: # Make docker client accessible so we can launch containers using host docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/io_manager_storage:/tmp/io_manager_storage
+    depends_on:
+      - postgresql
+      - docker_example_user_code
+    networks:
+      - otus_network
+
+  telegram_bot:
+    build:
+      context: .
+      dockerfile: ./bot/Dockerfile
+    container_name: telegram_bot
+    restart: on-failure
+    environment:
+      DAGSTER_POSTGRES_HOST: "postgresql"
+      DAGSTER_POSTGRES_USER: "dagster"
+      DAGSTER_POSTGRES_PASSWORD: "dagster"
+      DAGSTER_POSTGRES_DB: "dagster"
+      DAGSTER_POSTGRES_PORT: "5432"
+      DB_HOST_BOT: "postgresql"
+      DB_PORT_BOT: "5432"
+      DB_USER_BOT: "postgres"
+      DB_NAME_BOT: "postgres"
+      DB_PASS_BOT: "postgres"
+      TELEGRAM_BOT_API_TOKEN: "7288723112:AAE2tIlrJs1LshdS5a1tuc4fGtwhXQzoYps"
+    depends_on:
+      - postgresql
+    networks:
+      - otus_network
+
+networks:
+  otus_network:
+    driver: bridge
+    name: otus_network
