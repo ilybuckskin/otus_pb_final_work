@@ -57,7 +57,7 @@ async def update_notification_text_fab(
 ):
     with suppress(TelegramBadRequest):
         await message.edit_text(
-            f"Выбранные категории для удаления ❌: {new_value}",
+            f"❌ Выбранные категории для удаления: {new_value}",
             reply_markup=await get_keyboard_fab(session, user_id),
         )
 
@@ -66,7 +66,7 @@ async def update_notification_text_fab(
 async def with_puree_fab(message: types.Message, session: AsyncSession):
     user_data[message.from_user.id] = defaultdict()
     await message.answer(
-        "Вы подписаны на следующие уведомления:",
+        "Вы подписаны на следующие уведомления, для удаления выберите уведомления из списка:",
         reply_markup=await get_keyboard_fab(session, message.from_user.id),
     )
 
@@ -90,6 +90,6 @@ async def callbacks_notification_change_fab(
     elif callback_data.action == "unsubscribe":
         await unsubscribe_notifications(session, user_value, callback.from_user.id)
         user_list = list(user_value.values())
-        await callback.message.edit_text(f"Успешно: {user_list}")
+        await callback.message.edit_text(f"Успешно отписались от следующих уведомлений: {user_list}")
     else:
         await callback.message.edit_text(f"Спасибо, что воспользовались ботом!")

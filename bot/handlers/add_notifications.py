@@ -53,7 +53,7 @@ async def update_notification_text_fab(
 ):
     with suppress(TelegramBadRequest):
         await message.edit_text(
-            f"Выберанные категории: {new_value}",
+            f"➕ Выбранные категории для добавления: {new_value}",
             reply_markup=await get_keyboard_fab(session),
         )
 
